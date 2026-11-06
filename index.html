@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatório de Infrações</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <img src="logo.png" alt="" class="topbar-logo">
+  <div>
+    <div class="topbar-title">Relatório de Infrações</div>
+    <div class="topbar-sub">Separação por empresa e exportação em PDF</div>
+  </div>
+</header>
+
+<main class="container">
+  <section class="panel">
+    <div class="panel-head"><h2>1. Planilha</h2></div>
+    <label id="drop" class="drop" for="file">
+      <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+      <span class="drop-main">Arraste o arquivo .xlsx aqui ou <u>clique para selecionar</u></span>
+      <span class="drop-sub" id="fileInfo">Nenhum arquivo carregado</span>
+    </label>
+    <div class="file-actions">
+      <div id="msg" class="msg" hidden></div>
+      <button class="btn btn-ghost" id="btnClear" hidden>Limpar e carregar outra planilha</button>
+    </div>
+  </section>
+
+  <section class="panel" id="resultPanel" hidden>
+    <div class="panel-head">
+      <h2>2. Empresas encontradas</h2>
+      <div class="actions">
+        <input type="search" id="search" placeholder="Filtrar empresa…">
+        <button class="btn btn-secondary" id="btnEach">Baixar PDFs separados</button>
+        <button class="btn btn-primary" id="btnAll">Gerar PDF único</button>
+        <button class="btn btn-wpp" id="btnWpp" title="Gera o PDF das empresas selecionadas e abre a conversa no WhatsApp Web">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3 1 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2 .7 2.8.6.4-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.1-.2Z"/></svg>
+          Enviar ao chefe
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="grid">
+        <thead><tr>
+          <th class="chk"><input type="checkbox" id="chkAll" checked aria-label="Selecionar todas"></th>
+          <th>Empresa</th><th class="num">Infrações</th><th class="num">Pontos</th><th class="num">Valor total</th><th class="act"></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+        <tfoot><tr><td></td><td id="ftLabel"></td><td class="num" id="ftQtd"></td><td class="num" id="ftPts"></td><td class="num" id="ftVal"></td><td></td></tr></tfoot>
+      </table>
+    </div>
+    <p class="hint">"PDF único" junta as empresas selecionadas, cada uma começando em nova página. "PDFs separados" baixa um arquivo por empresa. "Enviar ao chefe" baixa o PDF único e abre a conversa no WhatsApp Web — é só arrastar o arquivo para a conversa e enviar.</p>
+  </section>
+</main>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="vendor/xlsx.full.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script src="logo.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

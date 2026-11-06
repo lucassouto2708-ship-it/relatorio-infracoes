@@ -1,0 +1,77 @@
+:root{--bg:#F5F6F8;--surface:#FFF;--text:#1F2937;--muted:#6B7280;--border:#E2E5E9;--primary:#1E4E8C;--primary-soft:#EAF2FF;--error:#C0392B;--success:#16835B;--r:6px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+.topbar-logo{width:34px;height:34px}
+.topbar-title{font-weight:700;font-size:16px}
+.topbar-sub{font-size:12px;color:var(--muted)}
+.container{max-width:1100px;margin:24px auto;padding:0 16px;display:grid;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h2{margin:0;font-size:15px;font-weight:600}
+.drop{display:flex;flex-direction:column;align-items:center;gap:4px;padding:28px 16px;border:1.5px dashed #C9CED6;border-radius:var(--r);cursor:pointer;text-align:center;transition:background .15s,border-color .15s}
+.drop:hover,.drop.over{background:var(--primary-soft);border-color:var(--primary)}
+.drop-main{font-weight:500}
+.drop-sub{font-size:12px;color:var(--muted)}
+.msg{margin-top:12px;padding:8px 12px;border-radius:var(--r);font-size:13px;border:1px solid}
+.msg.err{color:var(--error);background:#FDF1EF;border-color:#F2C9C3}
+.msg.ok{color:var(--success);background:#EEF8F3;border-color:#C4E6D6}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+input[type=search]{height:34px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r);font:inherit;min-width:200px}
+.btn{height:34px;padding:0 14px;border-radius:var(--r);font:inherit;font-weight:500;cursor:pointer;border:1px solid transparent}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#173F73}
+.btn-secondary{background:var(--surface);color:var(--primary);border-color:var(--border)}
+.btn-secondary:hover{background:var(--primary-soft)}
+.btn-link{background:none;border:none;color:var(--primary);cursor:pointer;font:inherit;font-weight:500;padding:2px 4px}
+.btn-link:hover{text-decoration:underline}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r)}
+.grid{width:100%;border-collapse:collapse}
+.grid th{background:#F9FAFB;text-align:left;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding:8px 12px;border-bottom:1px solid var(--border)}
+.grid td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.grid tbody tr:hover{background:#FAFBFC}
+.grid tfoot td{font-weight:600;background:#F9FAFB;border-bottom:none}
+.num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chk{width:36px}.act{width:90px;text-align:right}
+.hint{margin:10px 0 0;font-size:12px;color:var(--muted)}
+
+/* ---------- ações / botões novos ---------- */
+.file-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.file-actions .msg{margin-top:0;flex:1;min-width:220px}
+.btn-ghost{background:none;color:var(--muted);border-color:var(--border)}
+.btn-ghost:hover{color:var(--error);border-color:#F2C9C3;background:#FDF1EF}
+.btn-wpp{display:inline-flex;align-items:center;gap:6px;background:#1F8F55;color:#fff}
+.btn-wpp:hover{background:#18744A}
+.btn{position:relative;overflow:hidden}
+
+/* Efeito 1 — Border beam: um feixe percorre a borda da área de upload ao passar/arrastar */
+.drop{position:relative;isolation:isolate}
+.drop::before{content:"";position:absolute;inset:-1.5px;border-radius:inherit;padding:1.5px;z-index:-1;opacity:0;transition:opacity .2s;
+  background:conic-gradient(from var(--beam,0deg),transparent 0 80%,var(--primary) 90%,transparent 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.drop:hover::before,.drop.over::before{opacity:1;animation:beam 2.4s linear infinite}
+@property --beam{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes beam{to{--beam:360deg}}
+
+/* Efeito 2 — Shimmer: brilho passando no botão enquanto o PDF é gerado */
+.btn.busy{pointer-events:none}
+.btn.busy::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-100%);animation:shimmer 1s ease-in-out infinite}
+.btn-secondary.busy::after{background:linear-gradient(100deg,transparent 30%,rgba(30,78,140,.15) 50%,transparent 70%)}
+@keyframes shimmer{to{transform:translateX(100%)}}
+
+/* Efeito 3 — Revelação escalonada das linhas ao carregar a planilha */
+.grid tbody tr.reveal{animation:rowIn .35s ease-out both;animation-delay:calc(var(--i) * 40ms)}
+@keyframes rowIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.panel.enter{animation:rowIn .3s ease-out both}
+
+/* Efeito 5 — Toasts discretos (feedback) */
+.toasts{position:fixed;right:16px;bottom:16px;display:grid;gap:8px;z-index:50;max-width:min(380px,calc(100vw - 32px))}
+.toast{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:var(--r);padding:10px 12px;font-size:13px;box-shadow:0 4px 14px rgba(31,41,55,.08);animation:toastIn .25s ease-out both}
+.toast.ok{border-left-color:var(--success)}.toast.err{border-left-color:var(--error)}
+.toast.out{animation:toastOut .2s ease-in both}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(8px)}}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
