@@ -75,3 +75,10 @@ input[type=search]{height:34px;padding:0 10px;border:1px solid var(--border);bor
 @keyframes toastOut{to{opacity:0;transform:translateY(8px)}}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ---------- filtro de período ---------- */
+.filterbar{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;padding:12px;margin-bottom:12px;background:#F9FAFB;border:1px solid var(--border);border-radius:var(--r)}
+.field{display:grid;gap:4px;font-size:12px;font-weight:500;color:var(--muted)}
+.field select,.field input{height:34px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r);font:inherit;font-size:13px;color:var(--text);background:var(--surface)}
+.dt-info{margin-left:auto;font-size:12px;color:var(--muted);align-self:center}
+.grid td.empty{text-align:center;color:var(--muted);padding:24px}

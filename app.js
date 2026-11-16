@@ -9,6 +9,8 @@ const COLS = [
   ['VALOR INFRACAO','Valor'],['DATA VENCIMENTO','Vencimento']
 ];
 const REQUIRED = ['EMPRESA', ...COLS.map(c => c[0])];
+const OPTIONAL = ['DATA CADASTRO'];
+const DATE_LABEL = {'DATA INFRACAO':'Data da infração', 'DATA VENCIMENTO':'Data de vencimento', 'DATA CADASTRO':'Data de cadastro'};
 
 const $ = id => document.getElementById(id);
 const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim().toUpperCase();
@@ -25,7 +27,9 @@ const fmtCell = (key, v) => {
 const parseDate = s => { const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(s); return m ? new Date(+m[3], m[2]-1, +m[1]).getTime() : 0; };
 const safeName = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_').slice(0,80);
 
-let groups = [];   // [{name, rows:[...], pts, total}]
+let allRows = [];  // todas as linhas da planilha
+let groups = [];   // [{key, name, rows:[...], pts, total}] — já filtrado pelo período
+const selection = new Map(); // key da empresa -> marcada?
 let fileName = '';
 
 function showMsg(text, type){ const m = $('msg'); m.textContent = text; m.className = 'msg ' + type; m.hidden = !text; }
@@ -44,21 +48,20 @@ async function loadFile(file){
     const missing = REQUIRED.filter(c => !(c in map));
     if (missing.length) throw new Error('Colunas não encontradas: ' + missing.join(', '));
 
-    const byCo = new Map();
+    allRows = [];
     for (const r of raw) {
       const emp = String(r[map.EMPRESA] ?? '').replace(/\s+/g,' ').trim();
       if (!emp && !r[map.PLACA]) continue;
-      const key = norm(emp) || '(SEM EMPRESA)';
-      if (!byCo.has(key)) byCo.set(key, {name: emp || '(Sem empresa)', rows: [], pts:0, total:0});
-      const g = byCo.get(key);
-      const row = {}; REQUIRED.forEach(c => row[c] = r[map[c]]);
-      g.rows.push(row);
-      g.pts += toNum(row.PONTOS); g.total += toNum(row['VALOR INFRACAO']);
+      const row = {}; [...REQUIRED, ...OPTIONAL].forEach(c => row[c] = c in map ? r[map[c]] : '');
+      row.EMPRESA = emp;
+      allRows.push(row);
     }
-    groups = [...byCo.values()].sort((a,b) => a.name.localeCompare(b.name,'pt-BR'));
-    groups.forEach(g => g.rows.sort((a,b) => String(a.PLACA).localeCompare(String(b.PLACA)) || parseDate(fmtCell('DATA INFRACAO',a['DATA INFRACAO'])) - parseDate(fmtCell('DATA INFRACAO',b['DATA INFRACAO']))));
-    const n = groups.reduce((s,g) => s + g.rows.length, 0);
-    $('fileInfo').textContent = `${file.name} — ${n} infrações, ${groups.length} empresas`;
+    // opção "Data de cadastro" só aparece se a coluna existir
+    $('dtField').querySelector('[value="DATA CADASTRO"]').hidden = !('DATA CADASTRO' in map);
+    $('dtFrom').value = $('dtTo').value = '';
+    selection.clear();
+    buildGroups();
+    $('fileInfo').textContent = `${file.name} — ${allRows.length} infrações, ${groups.length} empresas`;
     showMsg('Planilha carregada com sucesso.', 'ok');
     $('btnClear').hidden = false;
     render(true);
@@ -67,6 +70,48 @@ async function loadFile(file){
     $('fileInfo').textContent = 'Nenhum arquivo carregado';
     showMsg('Não foi possível ler o arquivo: ' + e.message, 'err');
   }
+}
+
+// data da célula (texto dd/mm/aaaa ou Date) -> 'aaaa-mm-dd' para comparar com o <input type=date>
+function isoDate(v){
+  if (v instanceof Date) return `${v.getFullYear()}-${pad(v.getMonth()+1)}-${pad(v.getDate())}`;
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(String(v ?? '').trim());
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+}
+const brDate = iso => iso ? iso.split('-').reverse().join('/') : '';
+
+function dateFilter(){
+  const field = $('dtField').value, from = $('dtFrom').value, to = $('dtTo').value;
+  return {field, from, to, active: !!(from || to)};
+}
+function periodText(){
+  const f = dateFilter(); if (!f.active) return '';
+  const lbl = DATE_LABEL[f.field];
+  if (f.from && f.to) return f.from === f.to ? `${lbl}: ${brDate(f.from)}` : `${lbl}: ${brDate(f.from)} a ${brDate(f.to)}`;
+  return f.from ? `${lbl}: a partir de ${brDate(f.from)}` : `${lbl}: até ${brDate(f.to)}`;
+}
+
+function buildGroups(){
+  const f = dateFilter();
+  const byCo = new Map();
+  for (const row of allRows) {
+    if (f.active) {
+      const d = isoDate(row[f.field]);
+      if (!d || (f.from && d < f.from) || (f.to && d > f.to)) continue;
+    }
+    const key = norm(row.EMPRESA) || '(SEM EMPRESA)';
+    if (!byCo.has(key)) byCo.set(key, {key, name: row.EMPRESA || '(Sem empresa)', rows: [], pts:0, total:0});
+    const g = byCo.get(key);
+    g.rows.push(row); g.pts += toNum(row.PONTOS); g.total += toNum(row['VALOR INFRACAO']);
+  }
+  groups = [...byCo.values()].sort((a,b) => a.name.localeCompare(b.name,'pt-BR'));
+  groups.forEach(g => {
+    g.sel = selection.get(g.key) ?? true;
+    g.rows.sort((a,b) => String(a.PLACA).localeCompare(String(b.PLACA)) || isoDate(a['DATA INFRACAO']).localeCompare(isoDate(b['DATA INFRACAO'])));
+  });
+  const n = groups.reduce((a,g) => a + g.rows.length, 0);
+  $('dtInfo').textContent = f.active ? `${n} de ${allRows.length} infrações no período` : `Mostrando todas as ${allRows.length} infrações`;
+  $('dtClear').hidden = !f.active;
 }
 
 function render(animate){
@@ -121,7 +166,8 @@ function drawCompany(doc, g, first){
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(31,41,55);
     doc.text(g.name, 25, 13);
     doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(107,114,128);
-    doc.text('Relatório de Infrações', 25, 18);
+    const per = periodText();
+    doc.text('Relatório de Infrações' + (per ? ' · ' + per : ''), 25, 18);
     doc.text('Emitido em ' + NOW(), W - 10, 13, {align:'right'});
     doc.text(`${g.rows.length} infrações · ${g.pts} pontos · ${brl(g.total)}`, W - 10, 18, {align:'right'});
     doc.setDrawColor(226,229,233); doc.line(10, 22, W - 10, 22);
@@ -179,7 +225,8 @@ function toast(text, type = '', ms = 5000){
 }
 
 function clearAll(){
-  groups = []; fileName = '';
+  groups = []; allRows = []; selection.clear(); fileName = '';
+  $('dtFrom').value = $('dtTo').value = '';
   $('file').value = ''; $('search').value = '';
   $('rows').innerHTML = '';
   ['ftQtd','ftPts','ftVal'].forEach(id => $(id)._v = 0);
@@ -193,7 +240,8 @@ async function sendWhatsApp(){
   const list = selected();
   const nome = list.length === 1 ? `Infracoes_${safeName(list[0].name)}.pdf` : `Infracoes_${new Date().toISOString().slice(0,10)}.pdf`;
   const qtd = list.reduce((a,g) => a + g.rows.length, 0), total = list.reduce((a,g) => a + g.total, 0);
-  const texto = `Segue relatório de infrações (${list.length} empresa${list.length > 1 ? 's' : ''}, ${qtd} infrações, ${brl(total)}).\n` +
+  const per = periodText();
+  const texto = `Segue relatório de infrações${per ? ' — ' + per : ''} (${list.length} empresa${list.length > 1 ? 's' : ''}, ${qtd} infrações, ${brl(total)}).\n` +
                 list.map(g => `• ${g.name}: ${g.rows.length} — ${brl(g.total)}`).join('\n');
   const url = `https://web.whatsapp.com/send?phone=${WPP_CHEFE}&text=${encodeURIComponent(texto)}`;
   buildPdf(list).save(nome);
@@ -209,9 +257,12 @@ const drop = $('drop');
 ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', e => e.dataTransfer.files[0] && loadFile(e.dataTransfer.files[0]));
 $('search').addEventListener('input', render);
-$('rows').addEventListener('change', e => { const i = e.target.dataset.i; if (i != null) { groups[i].sel = e.target.checked; updateFooter(); } });
+$('rows').addEventListener('change', e => { const i = e.target.dataset.i; if (i != null) { groups[i].sel = e.target.checked; selection.set(groups[i].key, e.target.checked); updateFooter(); } });
 $('rows').addEventListener('click', e => { const i = e.target.dataset.pdf; if (i != null) pdfFor([groups[i]], `Infracoes_${safeName(groups[i].name)}.pdf`); });
-$('chkAll').addEventListener('change', e => { groups.forEach(g => g.sel = e.target.checked); render(); });
+$('chkAll').addEventListener('change', e => { groups.forEach(g => { g.sel = e.target.checked; selection.set(g.key, g.sel); }); render(); });
+const onPeriod = () => { if (!allRows.length) return; buildGroups(); render(true); };
+['dtField','dtFrom','dtTo'].forEach(id => $(id).addEventListener('change', onPeriod));
+$('dtClear').addEventListener('click', () => { $('dtFrom').value = $('dtTo').value = ''; onPeriod(); });
 $('btnAll').addEventListener('click', e => busy(e.currentTarget, () => pdfFor(selected(), `Infracoes_${new Date().toISOString().slice(0,10)}.pdf`)));
 $('btnEach').addEventListener('click', e => busy(e.currentTarget, async () => {
   for (const g of selected()) { pdfFor([g], `Infracoes_${safeName(g.name)}.pdf`); await new Promise(r => setTimeout(r, 400)); }

@@ -43,6 +43,19 @@
         </button>
       </div>
     </div>
+    <div class="filterbar">
+      <label class="field"><span>Filtrar por</span>
+        <select id="dtField">
+          <option value="DATA INFRACAO">Data da infração</option>
+          <option value="DATA VENCIMENTO">Data de vencimento</option>
+          <option value="DATA CADASTRO">Data de cadastro</option>
+        </select>
+      </label>
+      <label class="field"><span>De</span><input type="date" id="dtFrom"></label>
+      <label class="field"><span>Até</span><input type="date" id="dtTo"></label>
+      <button class="btn-link" id="dtClear" hidden>Limpar período</button>
+      <span class="dt-info" id="dtInfo"></span>
+    </div>
     <div class="table-wrap">
       <table class="grid">
         <thead><tr>
@@ -53,7 +66,7 @@
         <tfoot><tr><td></td><td id="ftLabel"></td><td class="num" id="ftQtd"></td><td class="num" id="ftPts"></td><td class="num" id="ftVal"></td><td></td></tr></tfoot>
       </table>
     </div>
-    <p class="hint">"PDF único" junta as empresas selecionadas, cada uma começando em nova página. "PDFs separados" baixa um arquivo por empresa. "Enviar ao chefe" baixa o PDF único e abre a conversa no WhatsApp Web — é só arrastar o arquivo para a conversa e enviar.</p>
+    <p class="hint">"PDF único" junta as empresas selecionadas, cada uma começando em nova página. Para uma data só, preencha "De" e "Até" com o mesmo dia — o período escolhido sai impresso no PDF. "PDFs separados" baixa um arquivo por empresa. "Enviar ao chefe" baixa o PDF único e abre a conversa no WhatsApp Web — é só arrastar o arquivo para a conversa e enviar.</p>
   </section>
 </main>
 <div id="toasts" class="toasts" aria-live="polite"></div>
