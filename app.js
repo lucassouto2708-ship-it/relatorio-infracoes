@@ -202,10 +202,22 @@ function addPageNumbers(doc){
   }
 }
 
+// Dados estruturados vão embutidos no PDF (campo "Palavras-chave") para a aba Notificações ler depois
+const PDF_TAG = 'HSDATA1:';
+function pdfPayload(list){
+  const data = {
+    emitido: isoDate(new Date()), periodo: periodText(),
+    empresas: list.map(g => ({n: g.name, r: g.rows.map(r => [String(r.PLACA ?? '').trim(), String(r.ENQUADRAMENTO ?? '').trim(), toNum(r.PONTOS), toNum(r['VALOR INFRACAO']), isoDate(r['DATA INFRACAO'])])}))
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(data));
+  let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return PDF_TAG + btoa(bin);
+}
 function buildPdf(list){
   const doc = newDoc();
   list.forEach((g, i) => drawCompany(doc, g, i === 0));
   addPageNumbers(doc);
+  doc.setProperties({title: 'Relatório de Infrações', subject: periodText() || 'Relatório de Infrações', creator: 'Relatório de Infrações', keywords: pdfPayload(list)});
   return doc;
 }
 function pdfFor(list, name){ buildPdf(list).save(name); }

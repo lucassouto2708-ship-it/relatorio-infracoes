@@ -12,11 +12,15 @@
   <img src="logo.png" alt="" class="topbar-logo">
   <div>
     <div class="topbar-title">Relatório de Infrações</div>
-    <div class="topbar-sub">Separação por empresa e exportação em PDF</div>
+    <div class="topbar-sub">Separação por empresa, PDF e notificações</div>
   </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" role="tab" data-tab="tabRelatorio" aria-selected="true">Relatório</button>
+    <button class="tab" role="tab" data-tab="tabNotif" aria-selected="false">Notificações</button>
+  </nav>
 </header>
 
-<main class="container">
+<main class="container" id="tabRelatorio">
   <section class="panel">
     <div class="panel-head"><h2>1. Planilha</h2></div>
     <label id="drop" class="drop" for="file">
@@ -69,12 +73,56 @@
     <p class="hint">"PDF único" junta as empresas selecionadas, cada uma começando em nova página. Para uma data só, preencha "De" e "Até" com o mesmo dia — o período escolhido sai impresso no PDF. "PDFs separados" baixa um arquivo por empresa. "Enviar ao chefe" baixa o PDF único e abre a conversa no WhatsApp Web — é só arrastar o arquivo para a conversa e enviar.</p>
   </section>
 </main>
+
+<main class="container" id="tabNotif" hidden>
+  <section class="panel">
+    <div class="panel-head"><h2>1. Relatório em PDF</h2>
+      <button class="btn btn-secondary" id="nfFromSheet" hidden>Usar a planilha carregada</button>
+    </div>
+    <label id="nfDrop" class="drop" for="nfFile">
+      <input type="file" id="nfFile" accept=".pdf" multiple hidden>
+      <span class="drop-main">Arraste o(s) PDF(s) gerados na aba Relatório ou <u>clique para selecionar</u></span>
+      <span class="drop-sub" id="nfInfo">Nenhum PDF carregado</span>
+    </label>
+    <div class="file-actions">
+      <div id="nfMsg" class="msg" hidden></div>
+      <button class="btn btn-ghost" id="nfClear" hidden>Limpar</button>
+    </div>
+  </section>
+
+  <section class="panel" id="nfPanel" hidden>
+    <div class="panel-head">
+      <h2>2. Notificações por município</h2>
+      <div class="actions">
+        <button class="btn btn-primary" id="nfAll">Baixar selecionadas (.zip)</button>
+      </div>
+    </div>
+    <div class="filterbar">
+      <label class="field"><span>Data do relatório</span><input type="date" id="nfDataRel"></label>
+      <label class="field"><span>Data da comunicação</span><input type="date" id="nfDataCom"></label>
+      <span class="dt-info">Confira o nome da cidade antes de gerar — ele vai no texto do documento.</span>
+    </div>
+    <div class="table-wrap">
+      <table class="grid">
+        <thead><tr>
+          <th class="chk"><input type="checkbox" id="nfChkAll" checked aria-label="Selecionar todas"></th>
+          <th>Município (como sai no documento)</th><th class="uf">UF</th><th class="num">Infrações</th><th class="num">Valor</th><th>Não identificação do condutor</th><th class="act"></th>
+        </tr></thead>
+        <tbody id="nfRows"></tbody>
+      </table>
+    </div>
+    <p class="hint">Cada documento substitui os campos que estavam em amarelo no modelo (município, data, quantidade, pontos, valor, placas, período e valores de não identificação). Quando o município não tem multa por não identificação do condutor, esse parágrafo sai do documento automaticamente.</p>
+  </section>
+</main>
 <div id="toasts" class="toasts" aria-live="polite"></div>
 
 <script src="vendor/xlsx.full.min.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="vendor/jspdf.plugin.autotable.min.js"></script>
 <script src="logo.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script src="modelos/modelo-notificacao.js"></script>
 <script src="app.js"></script>
+<script src="notificacoes.js"></script>
 </body>
 </html>
