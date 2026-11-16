@@ -99,3 +99,5 @@ input[type=search]{height:34px;padding:0 10px;border:1px solid var(--border);bor
 .tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:500}
 .tag.warn{background:#FDF4E3;color:#8A5A12}
 .tag.none{background:#F3F4F6;color:var(--muted)}
+
+.msg.warn{color:#8A5A12;background:#FDF4E3;border-color:#F0DDB5}

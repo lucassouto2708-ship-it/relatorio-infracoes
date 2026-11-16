@@ -34,41 +34,85 @@ let fileName = '';
 
 function showMsg(text, type){ const m = $('msg'); m.textContent = text; m.className = 'msg ' + type; m.hidden = !text; }
 
+// Nomes aceitos para cada coluna (comparação sem acento, maiúscula, ignorando "DA/DE/DO" e pontuação).
+// A ordem das colunas na planilha não importa.
+const ALIASES = {
+  'EMPRESA':            ['EMPRESA','CLIENTE','RAZAO SOCIAL','NOME EMPRESA'],
+  'PLACA':              ['PLACA','PLACA VEICULO','VEICULO PLACA'],
+  'ENQUADRAMENTO':      ['ENQUADRAMENTO','DESCRICAO ENQUADRAMENTO','INFRACAO DESCRICAO'],
+  'PONTOS':             ['PONTOS','PONTUACAO','PONTO'],
+  'LOCAL INFRACAO':     ['LOCAL INFRACAO','LOCAL','ENDERECO INFRACAO'],
+  'MUNICIPIO INFRACAO': ['MUNICIPIO INFRACAO','CIDADE INFRACAO','MUNICIPIO'],
+  'GRAVIDADE':          ['GRAVIDADE','NATUREZA','NATUREZA INFRACAO'],
+  'INFRATOR':           ['INFRATOR','RESPONSAVEL','RESPONSAVEL INFRACAO'],
+  'DATA INFRACAO':      ['DATA INFRACAO','DT INFRACAO','DATA OCORRENCIA'],
+  'HORARIO INFRACAO':   ['HORARIO INFRACAO','HORA INFRACAO','HORARIO','HORA'],
+  'VALOR INFRACAO':     ['VALOR INFRACAO','VALOR MULTA','VALOR'],
+  'DATA VENCIMENTO':    ['DATA VENCIMENTO','VENCIMENTO','DT VENCIMENTO'],
+  'DATA CADASTRO':      ['DATA CADASTRO','DT CADASTRO','CADASTRO']
+};
+const MUST = ['EMPRESA','PLACA'];   // sem estas não dá para montar o relatório
+const headKey = s => norm(s).replace(/[^A-Z0-9 ]/g,' ').split(' ').filter(w => w && !['DA','DE','DO','DAS','DOS'].includes(w)).join(' ');
+
+// procura, em todas as abas e nas primeiras 30 linhas, a linha de cabeçalho que tem EMPRESA e PLACA
+function findTable(wb){
+  for (const name of wb.SheetNames) {
+    const ws = wb.Sheets[name]; if (!ws || !ws['!ref']) continue;
+    const grid = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true, blankrows:false});
+    for (let h = 0; h < Math.min(30, grid.length); h++) {
+      const keys = grid[h].map(headKey);
+      const col = {};
+      for (const [campo, nomes] of Object.entries(ALIASES)) {
+        for (const nome of nomes) { const i = keys.indexOf(headKey(nome)); if (i >= 0) { col[campo] = i; break; } }
+      }
+      if (MUST.every(c => c in col)) return {sheet: name, header: h, grid, col};
+    }
+  }
+  return null;
+}
+
 async function loadFile(file){
   showMsg('', '');
   fileName = file.name;
   $('fileInfo').textContent = 'Lendo ' + file.name + '…';
   try {
-    const wb = XLSX.read(await file.arrayBuffer(), {type:'array', cellDates:true});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json(ws, {defval:'', raw:true});
-    if (!raw.length) throw new Error('A planilha está vazia.');
-    // mapeia cabeçalhos normalizados -> nome real
-    const map = {}; Object.keys(raw[0]).forEach(k => map[norm(k)] = k);
-    const missing = REQUIRED.filter(c => !(c in map));
-    if (missing.length) throw new Error('Colunas não encontradas: ' + missing.join(', '));
+    if (!/\.(xlsx|xlsm|xls|csv)$/i.test(file.name)) throw new Error('o arquivo precisa ser .xlsx, .xls ou .csv.');
+    let buf;
+    try { buf = await file.arrayBuffer(); }
+    catch { throw new Error('o Windows não liberou o arquivo. Feche a planilha no Excel (ou baixe-a de novo do e-mail/rede) e tente outra vez.'); }
+    if (!buf.byteLength) throw new Error('o arquivo está vazio (0 bytes). Se ele está numa pasta de rede/OneDrive, abra uma vez no Excel para baixar e tente de novo.');
+    const wb = XLSX.read(buf, {type:'array', cellDates:true});
+    const t = findTable(wb);
+    if (!t) throw new Error('não encontrei as colunas EMPRESA e PLACA em nenhuma aba da planilha.');
 
     allRows = [];
-    for (const r of raw) {
-      const emp = String(r[map.EMPRESA] ?? '').replace(/\s+/g,' ').trim();
-      if (!emp && !r[map.PLACA]) continue;
-      const row = {}; [...REQUIRED, ...OPTIONAL].forEach(c => row[c] = c in map ? r[map[c]] : '');
+    for (const r of t.grid.slice(t.header + 1)) {
+      const emp = String(r[t.col.EMPRESA] ?? '').replace(/\s+/g,' ').trim();
+      if (!emp && !String(r[t.col.PLACA] ?? '').trim()) continue;
+      const row = {}; [...REQUIRED, ...OPTIONAL].forEach(c => row[c] = c in t.col ? r[t.col[c]] : '');
       row.EMPRESA = emp;
       allRows.push(row);
     }
+    if (!allRows.length) throw new Error('a planilha não tem nenhuma linha de infração abaixo do cabeçalho.');
+
     // opção "Data de cadastro" só aparece se a coluna existir
-    $('dtField').querySelector('[value="DATA CADASTRO"]').hidden = !('DATA CADASTRO' in map);
+    $('dtField').querySelector('[value="DATA CADASTRO"]').hidden = !('DATA CADASTRO' in t.col);
     $('dtFrom').value = $('dtTo').value = '';
     selection.clear();
     buildGroups();
     $('fileInfo').textContent = `${file.name} — ${allRows.length} infrações, ${groups.length} empresas`;
-    showMsg('Planilha carregada com sucesso.', 'ok');
+    const faltam = REQUIRED.filter(c => !(c in t.col));
+    if (faltam.length) showMsg(`Planilha carregada, mas estas colunas não existem nela e vão sair em branco: ${faltam.join(', ')}.`, 'warn');
+    else showMsg('Planilha carregada com sucesso.', 'ok');
     $('btnClear').hidden = false;
     render(true);
   } catch (e) {
-    groups = []; $('resultPanel').hidden = true;
+    groups = []; allRows = []; $('resultPanel').hidden = true;
     $('fileInfo').textContent = 'Nenhum arquivo carregado';
     showMsg('Não foi possível ler o arquivo: ' + e.message, 'err');
+    console.error(e);
+  } finally {
+    $('file').value = '';   // permite escolher o mesmo arquivo de novo
   }
 }
 

@@ -12,6 +12,11 @@ Abra o `index.html` no navegador (duplo clique). Funciona 100% offline — as bi
 
 Empresas com grafias diferentes de maiúsculas/acentos são agrupadas juntas. A logo do PDF fica em `logo.js` (gerada de `logo.png`).
 
+## Leitura da planilha
+- As colunas são encontradas **pelo nome**, em qualquer ordem, ignorando acento, maiúscula e "da/de/do" (ex.: `Data da Infração` = `DATA INFRACAO`). Nomes alternativos aceitos ficam em `ALIASES` no `app.js`.
+- O cabeçalho pode estar em qualquer uma das 30 primeiras linhas e em qualquer aba.
+- Só EMPRESA e PLACA são obrigatórias; coluna que faltar sai em branco, com aviso.
+
 ## Filtro de período
 Antes de gerar o PDF, escolha a data (infração, vencimento ou cadastro) e o intervalo "De / Até". Para um dia só, use a mesma data nos dois campos. O período sai impresso no PDF.
 
