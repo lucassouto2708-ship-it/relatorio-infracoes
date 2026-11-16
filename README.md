@@ -16,7 +16,7 @@ Empresas com grafias diferentes de maiúsculas/acentos são agrupadas juntas. A 
 Antes de gerar o PDF, escolha a data (infração, vencimento ou cadastro) e o intervalo "De / Até". Para um dia só, use a mesma data nos dois campos. O período sai impresso no PDF.
 
 ## Notificações (Comunicação Administrativa)
-Aba **Notificações**: arraste o(s) PDF(s) gerados na aba Relatório (ou use "Usar a planilha carregada"). O sistema gera um Word por município a partir de `modelos/modelo-notificacao.docx`, trocando os campos:
+Aba **Notificações**: arraste o(s) PDF(s) gerados na aba Relatório (ou use "Usar a planilha carregada"). O sistema gera Word e PDF por município (o zip vem com as pastas `Word/` e `PDF/`) a partir de `modelos/modelo-notificacao.docx`, trocando os campos:
 
 | Campo | Conteúdo |
 |---|---|

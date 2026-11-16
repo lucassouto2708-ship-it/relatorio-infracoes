@@ -35,7 +35,7 @@ input[type=search]{height:34px;padding:0 10px;border:1px solid var(--border);bor
 .grid tbody tr:hover{background:#FAFBFC}
 .grid tfoot td{font-weight:600;background:#F9FAFB;border-bottom:none}
 .num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}
-.chk{width:36px}.act{width:90px;text-align:right}
+.chk{width:36px}.act{width:110px;text-align:right;white-space:nowrap}
 .hint{margin:10px 0 0;font-size:12px;color:var(--muted)}
 
 /* ---------- ações / botões novos ---------- */

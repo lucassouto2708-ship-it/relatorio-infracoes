@@ -114,7 +114,7 @@ function renderNotif(animate){
       <td><input class="cell uf" data-f="uf" data-i="${i}" maxlength="2"></td>
       <td class="num">${s.qtd}</td><td class="num">${brl(s.valor)}</td>
       <td>${s.nic.length ? `<span class="tag warn">Sim · ${s.nic.length} multa(s)</span>` : '<span class="tag none">Não — parágrafo removido</span>'}</td>
-      <td class="act"><button class="btn-link" data-doc="${i}">Word</button></td>`;
+      <td class="act"><button class="btn-link" data-doc="${i}">Word</button><button class="btn-link" data-pdf="${i}">PDF</button></td>`;
     tr.querySelector('[data-f=cidade]').value = it.cidade;
     tr.querySelector('[data-f=uf]').value = it.uf;
     tr.querySelector('.sub').textContent = it.empresa;
@@ -165,14 +165,18 @@ async function modelo(){
   return JSZip.loadAsync(modeloZip);
 }
 
-async function gerarDocx(it){
+async function preenchido(it){
   const zip = await modelo();
   const vals = campos(it);
   for (const f of Object.keys(zip.files).filter(f => /^word\/(document|header\d*|footer\d*)\.xml$/.test(f))) {
     zip.file(f, preencher(await zip.file(f).async('string'), vals));
   }
-  return zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression:'DEFLATE'});
+  return zip;
 }
+async function gerarDocx(it){
+  return (await preenchido(it)).generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression:'DEFLATE'});
+}
+async function gerarPdf(it){ return docxParaPdf(await preenchido(it)); }
 
 const docName = it => `Comunicacao_Administrativa_${safeName(it.cidade || it.empresa)}.docx`;
 function baixar(blob, nome){
@@ -200,20 +204,26 @@ $('nfRows').addEventListener('change', e => {
   if (e.target.type === 'checkbox') { nfItems[e.target.dataset.i].sel = e.target.checked; $('nfChkAll').checked = nfItems.every(it => it.sel); $('nfAll').disabled = !nfItems.some(it => it.sel); }
 });
 $('nfRows').addEventListener('click', e => {
-  const i = e.target.dataset.doc; if (i == null) return;
+  const i = e.target.dataset.doc ?? e.target.dataset.pdf; if (i == null) return;
   const it = nfItems[i]; if (!validar([it])) return;
-  busy(e.target, async () => { baixar(await gerarDocx(it), docName(it)); toast(`Comunicação de ${it.cidade} gerada.`, 'ok'); });
+  const pdf = e.target.dataset.pdf != null;
+  busy(e.target, async () => {
+    if (pdf) baixar(await gerarPdf(it), docName(it).replace(/\.docx$/, '.pdf'));
+    else baixar(await gerarDocx(it), docName(it));
+    toast(`Comunicação de ${it.cidade} gerada.`, 'ok');
+  });
 });
 $('nfChkAll').addEventListener('change', e => { nfItems.forEach(it => it.sel = e.target.checked); renderNotif(); });
 $('nfAll').addEventListener('click', e => {
   const list = nfItems.filter(it => it.sel); if (!validar(list)) return;
   busy(e.currentTarget, async () => {
-    if (list.length === 1) { baixar(await gerarDocx(list[0]), docName(list[0])); }
-    else {
-      const out = new JSZip();
-      for (const it of list) out.file(docName(it), await gerarDocx(it));
-      baixar(await out.generateAsync({type:'blob'}), `Comunicacoes_${$('nfDataCom').value}.zip`);
+    // zip com Word e PDF de cada município, em pastas separadas
+    const out = new JSZip();
+    for (const it of list) {
+      out.file('Word/' + docName(it), await gerarDocx(it));
+      out.file('PDF/' + docName(it).replace(/\.docx$/, '.pdf'), await gerarPdf(it));
     }
+    baixar(await out.generateAsync({type:'blob'}), `Comunicacoes_${$('nfDataCom').value}.zip`);
     toast(`${list.length} comunicação(ões) gerada(s).`, 'ok');
   });
 });
