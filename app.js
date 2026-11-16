@@ -5,7 +5,7 @@ const WPP_CHEFE = '5533999090467';
 const COLS = [
   ['PLACA','Placa'],['ENQUADRAMENTO','Enquadramento'],['PONTOS','Pts'],
   ['LOCAL INFRACAO','Local'],['MUNICIPIO INFRACAO','Município'],['GRAVIDADE','Gravidade'],
-  ['INFRATOR','Infrator'],['DATA INFRACAO','Data'],['HORARIO INFRACAO','Hora'],
+  ['INFRATOR','Infrator'],['DATA INFRACAO','Data infr.'],['HORARIO INFRACAO','Hora'],
   ['VALOR INFRACAO','Valor'],['DATA VENCIMENTO','Vencimento']
 ];
 const REQUIRED = ['EMPRESA', ...COLS.map(c => c[0])];
@@ -74,9 +74,15 @@ async function loadFile(file){
 
 // data da célula (texto dd/mm/aaaa ou Date) -> 'aaaa-mm-dd' para comparar com o <input type=date>
 function isoDate(v){
-  if (v instanceof Date) return `${v.getFullYear()}-${pad(v.getMonth()+1)}-${pad(v.getDate())}`;
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(String(v ?? '').trim());
-  return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+  if (v instanceof Date) return isNaN(v) ? '' : `${v.getFullYear()}-${pad(v.getMonth()+1)}-${pad(v.getDate())}`;
+  if (typeof v === 'number' && v > 20000 && v < 80000) {           // data serial do Excel
+    const d = new Date(Math.round((v - 25569) * 864e5)); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`;
+  }
+  const s = String(v ?? '').trim();
+  let m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/.exec(s);
+  if (m) return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+  m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
 }
 const brDate = iso => iso ? iso.split('-').reverse().join('/') : '';
 
@@ -169,15 +175,19 @@ function drawCompany(doc, g, first){
     const per = periodText();
     doc.text('Relatório de Infrações' + (per ? ' · ' + per : ''), 25, 18);
     doc.text('Emitido em ' + NOW(), W - 10, 13, {align:'right'});
-    doc.text(`${g.rows.length} infrações · ${g.pts} pontos · ${brl(g.total)}`, W - 10, 18, {align:'right'});
+    doc.text(`${g.rows.length} ${g.rows.length === 1 ? 'infração' : 'infrações'} · ${g.pts} ${g.pts === 1 ? 'ponto' : 'pontos'} · ${brl(g.total)}`, W - 10, 18, {align:'right'});
     doc.setDrawColor(226,229,233); doc.line(10, 22, W - 10, 22);
   };
+  // filtrando por data de cadastro, a coluna "Cadastro" entra no PDF para mostrar a data usada no filtro
+  const f = dateFilter();
+  const cols = f.active && f.field === 'DATA CADASTRO' ? [...COLS, ['DATA CADASTRO','Cadastro']] : COLS;
+  const extra = cols.length > COLS.length;
   doc.autoTable({
     startY: 25,
     margin: {top: 25, left: 10, right: 10, bottom: 12},
-    head: [COLS.map(c => c[1])],
-    body: g.rows.map(r => COLS.map(([k]) => fmtCell(k, r[k]))),
-    foot: [[{content:'Total', colSpan:2}, String(g.pts), {content:'', colSpan:6}, brl(g.total), '']],
+    head: [cols.map(c => c[1])],
+    body: g.rows.map(r => cols.map(([k]) => fmtCell(k, r[k]))),
+    foot: [[{content:'Total', colSpan:2}, String(g.pts), {content:'', colSpan:6}, brl(g.total), ...cols.slice(10).map(() => '')]],
     showFoot: 'lastPage',
     theme: 'grid',
     styles: {font:'helvetica', fontSize:7, cellPadding:1.4, textColor:[31,41,55], lineColor:[226,229,233], lineWidth:.1, valign:'middle'},
@@ -185,10 +195,10 @@ function drawCompany(doc, g, first){
     footStyles: {fillColor:[234,242,255], textColor:[31,41,55], fontStyle:'bold'},
     alternateRowStyles: {fillColor:[249,250,251]},
     columnStyles: {
-      0:{cellWidth:17, fontStyle:'bold'}, 1:{cellWidth:62}, 2:{cellWidth:9, halign:'center'},
+      0:{cellWidth:17, fontStyle:'bold'}, 1:{cellWidth: extra ? 54 : 62}, 2:{cellWidth:9, halign:'center'},
       3:{cellWidth:'auto'}, 4:{cellWidth:28}, 5:{cellWidth:17}, 6:{cellWidth:20},
       7:{cellWidth:17, halign:'center'}, 8:{cellWidth:11, halign:'center'},
-      9:{cellWidth:20, halign:'right'}, 10:{cellWidth:18, halign:'center'}
+      9:{cellWidth:20, halign:'right'}, 10:{cellWidth:18, halign:'center'}, 11:{cellWidth:17, halign:'center', fontStyle:'bold'}
     },
     didDrawPage: header
   });
