@@ -12,7 +12,7 @@ const NIC_RE = /NAO IDENTIFICACAO DO CONDUTOR/;   // multa por não identificaç
 // ---------- abas ----------
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(o => { o.classList.toggle('active', o === t); o.setAttribute('aria-selected', o === t); });
-  ['tabRelatorio','tabNotif'].forEach(id => $(id).hidden = id !== t.dataset.tab);
+  ['tabRelatorio','tabNotif','tabComp'].forEach(id => $(id).hidden = id !== t.dataset.tab);
   if (t.dataset.tab === 'tabNotif') $('nfFromSheet').hidden = !allRows.length;
 }));
 

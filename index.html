@@ -13,11 +13,12 @@
   <img src="logo.png" alt="" class="topbar-logo">
   <div>
     <div class="topbar-title">Relatório de Infrações</div>
-    <div class="topbar-sub">Separação por empresa, PDF e notificações</div>
+    <div class="topbar-sub">Separação por empresa, PDF, notificações e comparativo</div>
   </div>
   <nav class="tabs" role="tablist">
     <button class="tab active" role="tab" data-tab="tabRelatorio" aria-selected="true">Relatório</button>
     <button class="tab" role="tab" data-tab="tabNotif" aria-selected="false">Notificações</button>
+    <button class="tab" role="tab" data-tab="tabComp" aria-selected="false">Comparativo</button>
   </nav>
 </header>
 
@@ -115,6 +116,39 @@
     <p class="hint">Cada documento substitui os campos que estavam em amarelo no modelo (município, data, quantidade, pontos, valor, placas, período e valores de não identificação). Quando o município não tem multa por não identificação do condutor, esse parágrafo sai do documento automaticamente.</p>
   </section>
 </main>
+
+<main class="container" id="tabComp" hidden>
+  <section class="panel">
+    <div class="panel-head"><h2>1. Relatórios a comparar</h2></div>
+    <label id="cpDrop" class="drop" for="cpFile">
+      <input type="file" id="cpFile" accept=".pdf" multiple hidden>
+      <span class="drop-main">Arraste os PDFs de cada mês (gerados na aba Relatório) ou <u>clique para selecionar</u></span>
+      <span class="drop-sub">Um PDF por mês — ex.: outubro e novembro</span>
+    </label>
+    <div class="file-actions">
+      <div id="cpMsg" class="msg" hidden></div>
+      <button class="btn btn-ghost" id="cpClear" hidden>Limpar</button>
+    </div>
+    <div class="table-wrap" id="cpListWrap" hidden>
+      <table class="grid">
+        <thead><tr><th>Nome do período (aparece no gráfico)</th><th>Arquivo</th><th class="num">Infrações</th><th class="act"></th></tr></thead>
+        <tbody id="cpList"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="cpPanel" hidden>
+    <div class="panel-head">
+      <h2>2. Comparativo mês a mês</h2>
+      <div class="actions">
+        <label class="field inline"><span>Empresa</span><select id="cpEmp"></select></label>
+        <button class="btn btn-secondary" id="cpPrint">Imprimir / salvar PDF</button>
+      </div>
+    </div>
+    <div id="cpCharts" class="cp-charts"></div>
+    <p class="hint">A variação compara cada período com o anterior. A ordem dos períodos segue a lista acima (use as setas para reordenar).</p>
+  </section>
+</main>
 <div id="toasts" class="toasts" aria-live="polite"></div>
 
 <script src="vendor/xlsx.full.min.js"></script>
@@ -125,6 +159,7 @@
 <script src="modelos/modelo-notificacao.js?v=202611161623"></script>
 <script src="app.js?v=202611161623"></script>
 <script src="docx-pdf.js?v=202611161623"></script>
+<script src="comparativo.js?v=202611181200"></script>
 <script src="notificacoes.js?v=202611161623"></script>
 </body>
 </html>
