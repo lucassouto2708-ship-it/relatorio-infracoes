@@ -125,6 +125,15 @@ input[type=search]{height:34px;padding:0 10px;border:1px solid var(--border);bor
   .topbar,.tabs,#tabComp>.panel:first-child,.actions .btn,.hint,.toasts{display:none!important}
   body{background:#fff}.panel{border:none;padding:0}
   .print-head{display:flex!important}
+  #tabComp{margin:0;padding:0;max-width:none;width:100%}
+  #cpPanel>.panel-head{display:none!important}
+  .cp-charts{width:100%}
+  .cp-charts{grid-template-columns:1fr 1fr;gap:10px}
+  .cp-card{break-inside:avoid;page-break-inside:avoid;padding:10px 12px}
+  .cp-card svg{max-height:62mm}
+  .cp-grow{animation:none!important}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+@page{size:A4 portrait;margin:12mm}
 .print-head{grid-column:1/-1;display:none;align-items:center;gap:10px;margin-bottom:12px}
 .print-head img{width:30px;height:30px}
